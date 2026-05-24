@@ -1,0 +1,38 @@
+name: Reset Repository History
+
+on:
+  workflow_dispatch:  # 手動觸發（避免誤跑）
+permissions:
+  contents: write
+  
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "${{ secrets.GIT_EMAIL }}"
+          git config user.email "${{ secrets.GIT_NAME }}"
+
+      - name: Create orphan branch (no history)
+        run: |
+          git checkout --orphan new-main
+
+          # 保留當前所有檔案
+          git add -A
+          git commit -m "Initial commit (history reset)"
+
+      - name: Replace main branch
+        run: |
+          git branch -D main || true
+          git branch -m main
+
+      - name: Force push to GitHub
+        run: |
+          git push origin main --force

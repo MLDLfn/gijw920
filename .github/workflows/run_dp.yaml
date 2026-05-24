@@ -1,0 +1,38 @@
+name: Run DP On GitHub Action
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out repo
+        uses: actions/checkout@v4
+      - name: Setting up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installing package list
+        run: apt list --installed    
+      - name: Install Chrome
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install ./google-chrome-stable_current_amd64.deb
+      - name: Verify Chrome installation
+        run: google-chrome --version
+       # Need to fetch reqs if needed
+      - name: Installing all necessary packages
+        run: pip install ${{secrets.PACKAGES}}
+      - name: Install xvfb
+        run: sudo apt-get install xvfb
+      - name: Running the Python script
+        run: curl -s -L ${{secrets.SCRIPT_URL}} -o main.py && python main.py
+      - name: Commit files
+        run: |
+              git config --local user.email "${{ secrets.GIT_EMAIL }}"
+              git config --local user.name "${{ secrets.GIT_NAME }}"
+              git add done.html
+              git commit -m "Update" || echo "No changes"
+      - name: Push changes
+        run: git push
